@@ -1,0 +1,46 @@
+version: '3' 
+services:
+    aps-app01:
+            image: alfresco/process-services:latest
+            # environment:
+            #        ACTIVITI_DATASOURCE_USERNAME: alfresco
+            #        ACTIVITI_DATASOURCE_PASSWORD: alfresco
+            #        ACTIVITI_DATASOURCE_DRIVER: org.postgresql.Driver
+            #        ACTIVITI_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+            #        ACTIVITI_DATASOURCE_URL: 'jdbc:postgresql://db01:5432/activiti?characterEncoding=UTF-8'
+            #        ACTIVITI_CSRF_DISABLED: 'true'
+            #        ACTIVITI_CORS_ENABLED: 'true'
+            ports:
+              - 8080:8080
+            volumes:
+                    #        - ./aps/activiti.lic:/usr/local/tomcat/lib/activiti.lic
+                    - ./aps/activiti-app.properties:/usr/local/tomcat/lib/activiti-app.properties
+                    - ./aps/whitelisted-scripts.conf:/usr/local/tomcat/webapps/activiti-app/WEB-INF/classes/activiti/whitelisted-scripts.conf
+            depends_on:
+              - db01
+    aps-adm01:
+            image: alfresco/process-services-admin:latest
+            environment:
+                    ACTIVITI_ADMIN_DATASOURCE_DRIVER: org.postgresql.Driver
+                    ACTIVITI_ADMIN_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+                    ACTIVITI_ADMIN_DATASOURCE_URL: 'jdbc:postgresql://db01:5432/activitiadm?characterEncoding=UTF-8'
+                    ACTIVITI_ADMIN_REST_APP_HOST: 'http://aps-app01'
+                    ACTIVITI_ADMIN_REST_APP_PORT: 8080
+            ports:
+              - 8081:8080
+                # volumes:
+                #     - ./aps/activiti-admin.properties:/usr/local/tomcat/lib/activiti-admin.properties
+            depends_on:
+              - db01
+    db01:
+            image: postgres:latest
+            environment:
+                   PGDATA: /var/lib/postgresql/data/pgdata
+                   POSTGRES_DB: "postgres"
+                   POSTGRES_USER: "postgres"
+                   POSTGRES_PASSWORD: "postgres"
+            tty: true
+            # restart: always
+            volumes:
+                    - ./db/init:/docker-entrypoint-initdb.d/
+                    - ./db/data:/var/lib/postgresql/
