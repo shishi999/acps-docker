@@ -1,7 +1,7 @@
 version: '3' 
 services:
     aps-app01:
-            image: alfresco/process-services:latest
+            image: alfresco/process-services:1.10.0.1
             # environment:
             #        ACTIVITI_DATASOURCE_USERNAME: alfresco
             #        ACTIVITI_DATASOURCE_PASSWORD: alfresco
@@ -15,6 +15,7 @@ services:
             volumes:
                     #        - ./aps/activiti.lic:/usr/local/tomcat/lib/activiti.lic
                     - ./aps/activiti-app.properties:/usr/local/tomcat/lib/activiti-app.properties
+                    - ./aps/activiti-ldap.properties:/usr/local/tomcat/lib/activiti-ldap.properties
                     - ./aps/whitelisted-scripts.conf:/usr/local/tomcat/webapps/activiti-app/WEB-INF/classes/activiti/whitelisted-scripts.conf
             depends_on:
               - db01
@@ -75,6 +76,18 @@ services:
                 -Dtransform.misc.url=http://transform-core-aio:8090/
                 -Dcsrf.filter.enabled=false
                 -Ddsync.service.uris=http://localhost:9090/alfresco
+                -Dactiviti.domain=http://aps-app01:8080
+                -Dactiviti.baseUrl=activiti-app
+                -DactivitiRepoConnector.enabled=true
+                -Dauthentication.chain=alfinst:alfrescoNtlm,ldap1:ldap-ad
+                -Dldap.authentication.allowGuestLogin=false
+                -Dldap.authentication.userNameFormat=%s@alftest.local
+                -Dldap.authentication.java.naming.provider.url=ldap://win-ad:389
+                -Dldap.authentication.defaultAdministratorUserNames=ricksoft
+                -Dldap.synchronization.java.naming.security.principal=cn=ricksoft,cn=Users,dc=alftest,dc=local
+                -Dldap.synchronization.groupSearchBase=ou=Alfresco,dc=alftest,dc=local
+                -Dldap.synchronization.java.naming.security.credentials=ChangeMe!
+                -Dldap.synchronization.userSearchBase=ou=Alfresco,dc=alftest,dc=local
                 -Xms1500m -Xmx1500m
                 "
 
@@ -127,6 +140,8 @@ services:
                 -Dalfresco.context=alfresco
                 -Dalfresco.protocol=http
                 "
+        volumes:
+                - ./acs/aps-action-share-6.2.2.amp:/usr/local/tomcat/amps_share/aps-action-share-6.2.2.amp
     solr6:
         image: alfresco/alfresco-search-services:1.4.2
         environment:
@@ -183,10 +198,8 @@ services:
             -Ddw.server.applicationConnectors[0].type=http
             -Xms1000m -Xmx1000m
             "
-
         ports:
             - 9090:9090
-
 volumes:
     shared-file-store-volume:
         driver_opts:
